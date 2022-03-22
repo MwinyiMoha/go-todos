@@ -32,7 +32,7 @@ func (h *HTTPController) CreateTodo(c *gin.Context) {
 	var data domain.TodoPayload
 
 	if err := c.ShouldBind(&data); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"detail": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"detail": err.Error()})
 		return
 	}
 
@@ -61,7 +61,7 @@ func (h *HTTPController) UpdateTodo(c *gin.Context) {
 	todo_id := c.Param("id")
 
 	if err := c.ShouldBind(&data); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"detail": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"detail": err.Error()})
 		return
 	}
 
