@@ -1,9 +1,9 @@
 package services
 
 import (
-	"errors"
 	"go-todos/internal/core/domain"
 	"go-todos/internal/core/ports"
+	"go-todos/internal/utils/exceptions"
 )
 
 type TodoService struct {
@@ -26,7 +26,7 @@ func (t *TodoService) GetTodo(id string) (*domain.Todo, error) {
 
 func (t *TodoService) CreateTodo(description string) (*domain.Todo, error) {
 	if description == "" {
-		return nil, errors.New("description cannot be empty")
+		return nil, exceptions.New("MISSING_DESCRIPTION", 400)
 	}
 
 	return t.todoRepository.AddTodo(description)
@@ -34,7 +34,7 @@ func (t *TodoService) CreateTodo(description string) (*domain.Todo, error) {
 
 func (t *TodoService) UpdateTodo(id string, description string) (*domain.Todo, error) {
 	if description == "" {
-		return nil, errors.New("description cannot be empty")
+		return nil, exceptions.New("MISSING_DESCRIPTION", 400)
 	}
 
 	return t.todoRepository.EditTodo(id, description)

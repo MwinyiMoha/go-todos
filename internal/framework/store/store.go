@@ -1,8 +1,8 @@
 package store
 
 import (
-	"errors"
 	"go-todos/internal/core/domain"
+	"go-todos/internal/utils/exceptions"
 )
 
 type Store struct {
@@ -22,7 +22,7 @@ func (s *Store) FindTodoById(id string) (*domain.Todo, int, error) {
 		}
 	}
 
-	return nil, -1, errors.New("NOT FOUND")
+	return nil, -1, exceptions.New("TODO_NOT_FOUND", 404)
 }
 
 func (s *Store) ListTodos() (*[]domain.Todo, error) {

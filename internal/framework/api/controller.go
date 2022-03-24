@@ -3,6 +3,7 @@ package api
 import (
 	"go-todos/internal/core/domain"
 	"go-todos/internal/core/ports"
+	"go-todos/internal/utils/exceptions"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -38,6 +39,11 @@ func (h *HTTPController) CreateTodo(c *gin.Context) {
 
 	todo, err := h.todoService.CreateTodo(data.Description)
 	if err != nil {
+		if verr, ok := err.(*exceptions.Exception); ok {
+			c.JSON(verr.StatusCode, gin.H{"detail": verr.Error()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"detail": err.Error()})
 		return
 	}
@@ -49,6 +55,11 @@ func (h *HTTPController) GetTodo(c *gin.Context) {
 	todo_id := c.Param("id")
 	todo, err := h.todoService.GetTodo(todo_id)
 	if err != nil {
+		if verr, ok := err.(*exceptions.Exception); ok {
+			c.JSON(verr.StatusCode, gin.H{"detail": verr.Error()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"detail": err.Error()})
 		return
 	}
@@ -67,6 +78,11 @@ func (h *HTTPController) UpdateTodo(c *gin.Context) {
 
 	todo, err := h.todoService.UpdateTodo(todo_id, data.Description)
 	if err != nil {
+		if verr, ok := err.(*exceptions.Exception); ok {
+			c.JSON(verr.StatusCode, gin.H{"detail": verr.Error()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"detail": err.Error()})
 		return
 	}
@@ -77,6 +93,11 @@ func (h *HTTPController) UpdateTodo(c *gin.Context) {
 func (h *HTTPController) DeleteTodo(c *gin.Context) {
 	todo_id := c.Param("id")
 	if err := h.todoService.DeleteTodo(todo_id); err != nil {
+		if verr, ok := err.(*exceptions.Exception); ok {
+			c.JSON(verr.StatusCode, gin.H{"detail": verr.Error()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{"detail": err.Error()})
 		return
 	}
