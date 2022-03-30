@@ -38,12 +38,11 @@ func main() {
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
-	<-c
+	received := <-c
 
-	log.Println("Initiating graceful shutdown!!")
+	log.Printf("Handling (%v): Initiating graceful shutdown!!", received)
 
-	err := server.Shutdown(ctx)
-	if err != nil {
+	if err := server.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
 

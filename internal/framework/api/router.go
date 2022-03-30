@@ -24,11 +24,3 @@ func (r *Router) AddRoutes() {
 		v1.DELETE("/todos/:id", r.Controller.DeleteTodo)
 	}
 }
-
-func (r *Router) Serve() error {
-	if err := r.Engine.Run(); err != nil {
-		return err
-	}
-
-	return nil
-}
