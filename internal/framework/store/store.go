@@ -9,10 +9,10 @@ type Store struct {
 	todos []domain.Todo
 }
 
-func NewStore() *Store {
+func NewStore() (*Store, error) {
 	return &Store{
 		todos: []domain.Todo{},
-	}
+	}, nil
 }
 
 func (s *Store) FindTodoById(id string) (*domain.Todo, int, error) {
