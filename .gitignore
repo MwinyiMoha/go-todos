@@ -16,3 +16,6 @@
 
 # Config vars
 .env
+
+# Docker compose dirs
+apps/
