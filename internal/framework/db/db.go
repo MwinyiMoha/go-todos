@@ -18,12 +18,15 @@ type Repository struct {
 }
 
 func NewRepository() (*Repository, error) {
+	// Pull application configuarations
 	c := config.New()
-	uri := fmt.Sprintf("mongodb://%v:%v@%v:%v/?authSource=%v", c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.AuthDB)
+	// Create Mongo database URL
+	URL := fmt.Sprintf("mongodb://%v:%v@%v:%v/?authSource=%v", c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.AuthDB)
+
 	ctx, cancel := factories.NewContext()
 	defer cancel()
 
-	client, err := connectDatabase(ctx, uri)
+	client, err := connectDatabase(ctx, URL)
 	if err != nil {
 		return nil, err
 	}
