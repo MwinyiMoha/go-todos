@@ -7,8 +7,15 @@ import (
 )
 
 type Config struct {
-	AppTimeout int64
-	Port       string
+	AppTimeout     int64
+	Port           string
+	DBName         string
+	CollectionName string
+	DBHost         string
+	DBUser         string
+	DBPassword     string
+	DBPort         string
+	AuthDB         string
 }
 
 func MustGetEnv(key, defaultValue string) string {
@@ -28,7 +35,14 @@ func New() *Config {
 	}
 
 	return &Config{
-		AppTimeout: timeout,
-		Port:       MustGetEnv("PORT", "8080"),
+		AppTimeout:     timeout,
+		Port:           MustGetEnv("PORT", "8080"),
+		DBName:         MustGetEnv("DB_NAME", "todos"),
+		CollectionName: MustGetEnv("COLLECTION", "todos"),
+		DBHost:         MustGetEnv("DB_HOST", "localhost"),
+		DBUser:         MustGetEnv("DB_USER", "user"),
+		DBPassword:     MustGetEnv("DB_PASSWORD", "password"),
+		DBPort:         MustGetEnv("DB_PORT", "27017"),
+		AuthDB:         MustGetEnv("AUTH_DB", "admin"),
 	}
 }

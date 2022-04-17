@@ -1,30 +1,34 @@
 package main
 
 import (
-	"context"
 	"go-todos/internal/core/services"
 	"go-todos/internal/framework/api"
-	"go-todos/internal/framework/store"
+	"go-todos/internal/framework/db"
 	"go-todos/internal/utils/config"
+	"go-todos/internal/utils/factories"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
+
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func main() {
-	conf := config.New()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(conf.AppTimeout)*time.Second)
-	defer cancel()
+	// repository, err := store.NewStore()
 
-	repository := store.NewStore()
+	repository, err := db.NewRepository()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	service := services.NewTodoService(repository)
 	controller := api.NewHTTPController(service)
 	router := api.NewRouter(controller)
 	router.AddRoutes()
 
+	conf := config.New()
 	server := &http.Server{
 		Addr:    ":" + conf.Port,
 		Handler: router.Engine,
@@ -40,10 +44,21 @@ func main() {
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 	received := <-c
 
-	log.Printf("Handling (%v): Initiating graceful shutdown!!", received)
+	ctx, cancel := factories.NewContext()
+	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatal(err)
-	}
+	func() {
+		log.Printf("Handling (%v): Initiating graceful shutdown!!", received)
+
+		log.Printf("Closing database connection!!")
+		if err := repository.Client.Disconnect(ctx); err != nil {
+			log.Fatalf("Error closing database connection-- %v", err)
+		}
+
+		log.Printf("Shutting down server!!")
+		if err := server.Shutdown(ctx); err != nil {
+			log.Fatalf("Server shutdown error -- %v", err)
+		}
+	}()
 
 }
