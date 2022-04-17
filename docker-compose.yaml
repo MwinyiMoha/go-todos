@@ -1,0 +1,25 @@
+version: '3.9'
+
+services:
+  db:
+    image: mongo:latest
+    expose:
+      - "27017"
+    volumes:
+      - ./apps/mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongouser
+      - MONGO_INITDB_ROOT_PASSWORD=t0ps3cr3t
+  web:
+    build: 
+      context: .
+    ports:
+      - 8080:8080
+    environment:
+      - APP_TIMEOUT=10
+      - DB_USER=mongouser
+      - DB_PASSWORD=t0ps3cr3t
+      - DB_HOST=db
+      - GIN_MODE=release
+    depends_on:
+      - db
