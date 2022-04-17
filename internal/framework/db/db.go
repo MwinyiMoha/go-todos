@@ -82,7 +82,7 @@ func (r *Repository) EditTodo(id string, description string) (*domain.Todo, erro
 	todo.Description = description
 	_, err = r.Collection.ReplaceOne(ctx, bson.M{"id": id}, todo)
 	if err != nil {
-		return nil, err
+		return nil, exceptions.New(err.Error(), 500)
 	}
 
 	return todo, nil
@@ -99,7 +99,7 @@ func (r *Repository) RemoveTodo(id string) error {
 
 	_, err = r.Collection.DeleteOne(ctx, bson.M{"id": id})
 	if err != nil {
-		return err
+		return exceptions.New(err.Error(), 500)
 	}
 
 	return nil
@@ -114,14 +114,14 @@ func (r *Repository) GetTodoOr404(id string) (*domain.Todo, error) {
 	result := r.Collection.FindOne(ctx, bson.M{"id": id})
 	if err := result.Err(); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return nil, exceptions.New("NOT_FOUND", 404)
+			return nil, exceptions.New(err.Error(), 404)
 		}
 
-		return nil, exceptions.New("INTERNAL_SERVER_ERROR", 500)
+		return nil, exceptions.New(err.Error(), 500)
 	}
 
 	if err := result.Decode(&todo); err != nil {
-		return nil, exceptions.New("INTERNAL_SERVER_ERROR", 500)
+		return nil, exceptions.New(err.Error(), 500)
 	}
 
 	return &todo, nil
