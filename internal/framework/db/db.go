@@ -18,12 +18,17 @@ type Repository struct {
 }
 
 func NewRepository() (*Repository, error) {
+	// Pull application configuarations
 	c := config.New()
-	uri := fmt.Sprintf("mongodb://%v:%v@%v:%v/?authSource=%v", c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.AuthDB)
+	// Create Mongo database URL
+	URL := fmt.Sprintf("mongodb://%v:%v@%v:%v/?authSource=%v", c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.AuthDB)
+
+	// Pull a context and a cancel function
 	ctx, cancel := factories.NewContext()
+	// Defer call to cancel function: it abandons operation this operation
 	defer cancel()
 
-	client, err := connectDatabase(ctx, uri)
+	client, err := connectDatabase(ctx, URL)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +40,9 @@ func NewRepository() (*Repository, error) {
 }
 
 func (r *Repository) ListTodos() (*[]domain.Todo, error) {
+	/*
+		Returns all todos in the database
+	*/
 	ctx, cancel := factories.NewContext()
 	defer cancel()
 
@@ -54,10 +62,15 @@ func (r *Repository) ListTodos() (*[]domain.Todo, error) {
 }
 
 func (r *Repository) RetrieveTodo(id string) (*domain.Todo, error) {
+	// Returns a todo with a given [id]
 	return r.GetTodoOr404(id)
 }
 
 func (r *Repository) AddTodo(description string) (*domain.Todo, error) {
+	/*
+		Adds a new todo in the collection
+		Returns the added todo
+	*/
 	ctx, cancel := factories.NewContext()
 	defer cancel()
 
@@ -71,6 +84,9 @@ func (r *Repository) AddTodo(description string) (*domain.Todo, error) {
 }
 
 func (r *Repository) EditTodo(id string, description string) (*domain.Todo, error) {
+	/*
+		Updates a todo with a given [id], with new description in the argument passed to this method
+	*/
 	todo, err := r.GetTodoOr404(id)
 	if err != nil {
 		return nil, err
@@ -89,6 +105,9 @@ func (r *Repository) EditTodo(id string, description string) (*domain.Todo, erro
 }
 
 func (r *Repository) RemoveTodo(id string) error {
+	/*
+		Removes a todo with the given [id] from the collection
+	*/
 	_, err := r.GetTodoOr404(id)
 	if err != nil {
 		return err
@@ -106,6 +125,9 @@ func (r *Repository) RemoveTodo(id string) error {
 }
 
 func (r *Repository) GetTodoOr404(id string) (*domain.Todo, error) {
+	/*
+		Returns a todo with the given [id] if found, else returns an error
+	*/
 	ctx, cancel := factories.NewContext()
 	defer cancel()
 
