@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package pb;
+
+import "google/protobuf/timestamp.proto";
+
+message Todo {
+    string Id = 1;
+    string Description = 2;
+    google.protobuf.Timestamp CreatedAt = 3;
+}
+
+message GetTodosRequest {}
+
+message GetTodosResponse {
+    repeated Todo TodoItems = 1;
+}
+
+message GetTodoRequest {
+    string Id = 1;
+}
+
+message GetTodoResponse {
+    Todo TodoItem = 1;
+}
+
+message CreateTodoRequest {
+    string Description = 1;
+}
+
+message CreateTodoResponse {
+    Todo TodoItem = 1;
+}
+
+message UpdateTodoRequest {
+    string Id = 1;
+    string Description = 2;
+}
+
+message UpdateTodoResponse {
+    Todo TodoItem = 1;
+}
+
+message DeleteTodoRequest {
+    string Id = 1;
+}
+
+message DeleteTodoResponse {}
+
+service TodoRPCService {
+
+    rpc GetTodos(GetTodosRequest) returns (GetTodosResponse);
+
+    rpc GetTodo(GetTodoRequest) returns (GetTodoResponse);
+
+    rpc CreateTodo(CreateTodoRequest) returns (CreateTodoResponse);
+
+    rpc UpdateTodo(UpdateTodoRequest) returns (UpdateTodoResponse);
+
+    rpc DeleteTodo(DeleteTodoRequest) returns (DeleteTodoResponse);
+    
+}
