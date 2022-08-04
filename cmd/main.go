@@ -2,41 +2,48 @@ package main
 
 import (
 	"go-todos/internal/core/services"
-	"go-todos/internal/framework/api"
 	"go-todos/internal/framework/db"
+	"go-todos/internal/framework/rpcserver"
+	pb "go-todos/internal/framework/rpcserver/proto"
 	"go-todos/internal/utils/config"
 	"go-todos/internal/utils/factories"
 	"log"
-	"net/http"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	_ "github.com/joho/godotenv/autoload"
+	"google.golang.org/grpc"
 )
 
 func main() {
-	// repository, err := store.NewStore()
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	conf := config.New()
 
 	repository, err := db.NewRepository()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("DB_CONN_ERROR -- %v", err)
 	}
 
 	service := services.NewTodoService(repository)
-	controller := api.NewHTTPController(service)
-	router := api.NewRouter(controller)
-	router.AddRoutes()
+	srv := rpcserver.NewRPCServer(service)
 
-	conf := config.New()
-	server := &http.Server{
-		Addr:    ":" + conf.Port,
-		Handler: router.Engine,
+	lis, err := net.Listen("tcp", ":"+conf.Port)
+	if err != nil {
+		log.Fatalf("NET_ERROR -- %v", err)
 	}
 
+	s := grpc.NewServer()
+	pb.RegisterTodoRPCServiceServer(s, srv)
+
 	go func() {
-		if err := server.ListenAndServe(); err != nil {
-			log.Fatalf("ERROR -- %s\n", err)
+		log.Printf("Starting RPC server on port: %v\n", conf.Port)
+
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("SERVE_ERRROR -- %v", err)
 		}
 	}()
 
@@ -48,17 +55,28 @@ func main() {
 	defer cancel()
 
 	func() {
-		log.Printf("Handling (%v): Initiating graceful shutdown!!", received)
+		log.Printf("Handling (%v): Initiating graceful server shutdown!!", received)
 
-		log.Printf("Closing database connection!!")
-		if err := repository.Client.Disconnect(ctx); err != nil {
-			log.Fatalf("Error closing database connection-- %v", err)
-		}
+		done := make(chan int)
+		go func(c chan int) {
+			s.GracefulStop()
+			c <- 1
+		}(done)
 
-		log.Printf("Shutting down server!!")
-		if err := server.Shutdown(ctx); err != nil {
-			log.Fatalf("Server shutdown error -- %v", err)
+		countdown := time.NewTimer(time.Duration(conf.AppTimeout))
+		select {
+		case <-done:
+			s.Stop()
+		case <-countdown.C:
+			s.Stop()
 		}
 	}()
 
+	func() {
+		log.Println("Closing client connections!!")
+
+		if err := repository.Client.Disconnect(ctx); err != nil {
+			log.Fatalf("DB_DISCONNECT_ERROR -- %v", err)
+		}
+	}()
 }
