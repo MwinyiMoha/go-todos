@@ -10,16 +10,25 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=mongouser
       - MONGO_INITDB_ROOT_PASSWORD=t0ps3cr3t
-  web:
+  proxy:
+    image: envoyproxy/envoy:v1.21-latest
+    ports:
+      - "8080:8080"
+      - "9901:9901"
+    volumes:
+      - ./apps/envoy:/etc/envoy
+    depends_on:
+      - server
+  server:
     build: 
       context: .
     ports:
-      - 8080:8080
+      - "50051:50051"
     environment:
       - APP_TIMEOUT=10
+      - PORT=50051
       - DB_USER=mongouser
       - DB_PASSWORD=t0ps3cr3t
       - DB_HOST=db
-      - GIN_MODE=release
     depends_on:
       - db
