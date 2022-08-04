@@ -12,8 +12,7 @@ RUN go mod download
 
 COPY . .
 
-RUN make build && \
-    make compress
+RUN make build && make compress
 
 
 FROM scratch as final
@@ -22,6 +21,6 @@ WORKDIR /app
 
 COPY --from=builder /app/build .
 
-EXPOSE 8080
+EXPOSE 50051
 
 CMD ["./app"]
