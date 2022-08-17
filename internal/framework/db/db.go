@@ -17,15 +17,12 @@ type Repository struct {
 	Collection *mongo.Collection
 }
 
-func NewRepository() (*Repository, error) {
-	// Pull application configuarations
-	c := config.New()
+func NewRepository(cfg *config.Config) (*Repository, error) {
 	// Create Mongo database URL
-	URL := fmt.Sprintf("mongodb://%v:%v@%v:%v/?authSource=%v", c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.AuthDB)
+	URL := fmt.Sprintf("mongodb://%v:%v@%v:%v/?authSource=%v", cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.AuthDB)
 
 	// Pull a context and a cancel function
 	ctx, cancel := factories.NewContext()
-	// Defer call to cancel function: it abandons operation this operation
 	defer cancel()
 
 	client, err := connectDatabase(ctx, URL)
@@ -35,7 +32,7 @@ func NewRepository() (*Repository, error) {
 
 	return &Repository{
 		Client:     client,
-		Collection: client.Database(c.DBName).Collection(c.CollectionName),
+		Collection: client.Database(cfg.DBName).Collection(cfg.CollectionName),
 	}, nil
 }
 

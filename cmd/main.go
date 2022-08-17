@@ -23,7 +23,7 @@ func main() {
 
 	conf := config.New()
 
-	repository, err := db.NewRepository()
+	repository, err := db.NewRepository(conf)
 	if err != nil {
 		log.Fatalf("DB_CONN_ERROR -- %v", err)
 	}
@@ -51,9 +51,6 @@ func main() {
 	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
 	received := <-c
 
-	ctx, cancel := factories.NewContext()
-	defer cancel()
-
 	func() {
 		log.Printf("Handling (%v): Initiating graceful server shutdown!!", received)
 
@@ -66,7 +63,7 @@ func main() {
 		countdown := time.NewTimer(time.Duration(conf.AppTimeout))
 		select {
 		case <-done:
-			s.Stop()
+			break
 		case <-countdown.C:
 			s.Stop()
 		}
@@ -74,6 +71,9 @@ func main() {
 
 	func() {
 		log.Println("Closing client connections!!")
+
+		ctx, cancel := factories.NewContext()
+		defer cancel()
 
 		if err := repository.Client.Disconnect(ctx); err != nil {
 			log.Fatalf("DB_DISCONNECT_ERROR -- %v", err)
