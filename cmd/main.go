@@ -1,82 +1,27 @@
 package main
 
 import (
-	"go-todos/internal/core/services"
-	"go-todos/internal/framework/db"
-	"go-todos/internal/framework/rpcserver"
-	pb "go-todos/internal/framework/rpcserver/proto"
-	"go-todos/internal/utils/config"
-	"go-todos/internal/utils/factories"
+	"go-todos/internal/config"
 	"log"
-	"net"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	_ "github.com/joho/godotenv/autoload"
-	"google.golang.org/grpc"
+	"github.com/go-playground/validator/v10"
+	"github.com/mwinyimoha/commons/pkg/logging"
+	"go.uber.org/zap"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	conf := config.New()
-
-	repository, err := db.NewRepository(conf)
+	logger, err := logging.NewLoggerConfig().BuildLogger()
 	if err != nil {
-		log.Fatalf("DB_CONN_ERROR -- %v", err)
+		log.Fatal("failed to initialize logger", err)
 	}
 
-	service := services.NewTodoService(repository)
-	srv := rpcserver.NewRPCServer(service)
+	defer func() { _ = logger.Sync() }()
 
-	lis, err := net.Listen("tcp", ":"+conf.Port)
+	val := validator.New()
+	_, err = config.New(val)
 	if err != nil {
-		log.Fatalf("NET_ERROR -- %v", err)
+		logger.Fatal("failed to load app config", zap.Error(err))
 	}
-
-	s := grpc.NewServer()
-	pb.RegisterTodoRPCServiceServer(s, srv)
-
-	go func() {
-		log.Printf("Starting RPC server on port: %v\n", conf.Port)
-
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("SERVE_ERRROR -- %v", err)
-		}
-	}()
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
-	received := <-c
-
-	func() {
-		log.Printf("Handling (%v): Initiating graceful server shutdown!!", received)
-
-		done := make(chan int)
-		go func(c chan int) {
-			s.GracefulStop()
-			c <- 1
-		}(done)
-
-		countdown := time.NewTimer(time.Duration(conf.AppTimeout))
-		select {
-		case <-done:
-			break
-		case <-countdown.C:
-			s.Stop()
-		}
-	}()
-
-	func() {
-		log.Println("Closing client connections!!")
-
-		ctx, cancel := factories.NewContext()
-		defer cancel()
-
-		if err := repository.Client.Disconnect(ctx); err != nil {
-			log.Fatalf("DB_DISCONNECT_ERROR -- %v", err)
-		}
-	}()
 }
