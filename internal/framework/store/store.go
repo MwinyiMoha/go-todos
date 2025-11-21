@@ -2,31 +2,32 @@ package store
 
 import (
 	"go-todos/internal/core/domain"
-	"go-todos/internal/utils/exceptions"
+
+	"github.com/mwinyimoha/commons/pkg/errors"
 )
 
 type Store struct {
-	todos []domain.Todo
+	todos []*domain.Todo
 }
 
-func NewStore() (*Store, error) {
+func New() *Store {
 	return &Store{
-		todos: []domain.Todo{},
-	}, nil
+		todos: []*domain.Todo{},
+	}
 }
 
 func (s *Store) FindTodoById(id string) (*domain.Todo, int, error) {
 	for i := range s.todos {
 		if s.todos[i].ID == id {
-			return &s.todos[i], i, nil
+			return s.todos[i], i, nil
 		}
 	}
 
-	return nil, -1, exceptions.New("TODO_NOT_FOUND", 404)
+	return nil, -1, errors.NewErrorf(errors.NotFound, "record not found")
 }
 
-func (s *Store) ListTodos() (*[]domain.Todo, error) {
-	return &s.todos, nil
+func (s *Store) ListTodos() ([]*domain.Todo, error) {
+	return s.todos, nil
 }
 
 func (s *Store) RetrieveTodo(id string) (*domain.Todo, error) {
@@ -40,7 +41,7 @@ func (s *Store) RetrieveTodo(id string) (*domain.Todo, error) {
 
 func (s *Store) AddTodo(description string) (*domain.Todo, error) {
 	todo := domain.NewTodo(description)
-	s.todos = append(s.todos, *todo)
+	s.todos = append(s.todos, todo)
 
 	return todo, nil
 }
@@ -52,7 +53,7 @@ func (s *Store) EditTodo(id string, description string) (*domain.Todo, error) {
 	}
 
 	todo.Description = description
-	s.todos[ix] = *todo
+	s.todos[ix] = todo
 	return todo, nil
 
 }
