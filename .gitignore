@@ -19,3 +19,6 @@
 
 # Docker compose dirs
 apps/
+
+# Build & temp dirs
+tmp/
