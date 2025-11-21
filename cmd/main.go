@@ -2,6 +2,10 @@ package main
 
 import (
 	"go-todos/internal/config"
+	"go-todos/internal/core/app"
+	"go-todos/internal/core/ports"
+	"go-todos/internal/framework/db"
+	"go-todos/internal/framework/store"
 	"log"
 
 	"github.com/go-playground/validator/v10"
@@ -20,8 +24,20 @@ func main() {
 	defer func() { _ = logger.Sync() }()
 
 	val := validator.New()
-	_, err = config.New(val)
+	cfg, err := config.New(val)
 	if err != nil {
 		logger.Fatal("failed to load app config", zap.Error(err))
 	}
+
+	var repo ports.AppRepository
+	if cfg.StoreType == "inmemory" {
+		repo = store.New()
+	} else {
+		repo, err = db.NewRepository(cfg)
+		if err != nil {
+			logger.Fatal("failed to initialize db repository", zap.Error(err))
+		}
+	}
+
+	_ = app.NewService(repo)
 }
