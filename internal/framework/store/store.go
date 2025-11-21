@@ -16,7 +16,7 @@ func New() *Store {
 	}
 }
 
-func (s *Store) FindTodoById(id string) (*domain.Todo, int, error) {
+func (s *Store) findTodoById(id string) (*domain.Todo, int, error) {
 	for i := range s.todos {
 		if s.todos[i].ID == id {
 			return s.todos[i], i, nil
@@ -31,7 +31,7 @@ func (s *Store) ListTodos() ([]*domain.Todo, error) {
 }
 
 func (s *Store) RetrieveTodo(id string) (*domain.Todo, error) {
-	todo, _, err := s.FindTodoById(id)
+	todo, _, err := s.findTodoById(id)
 	if err != nil {
 		return nil, err
 	}
@@ -39,27 +39,24 @@ func (s *Store) RetrieveTodo(id string) (*domain.Todo, error) {
 	return todo, nil
 }
 
-func (s *Store) AddTodo(description string) (*domain.Todo, error) {
-	todo := domain.NewTodo(description)
+func (s *Store) SaveTodo(todo *domain.Todo) error {
 	s.todos = append(s.todos, todo)
-
-	return todo, nil
+	return nil
 }
 
-func (s *Store) EditTodo(id string, description string) (*domain.Todo, error) {
-	todo, ix, err := s.FindTodoById(id)
+func (s *Store) EditTodo(todo *domain.Todo) error {
+	_, ix, err := s.findTodoById(todo.ID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	todo.Description = description
 	s.todos[ix] = todo
-	return todo, nil
+	return nil
 
 }
 
 func (s *Store) RemoveTodo(id string) error {
-	_, ix, err := s.FindTodoById(id)
+	_, ix, err := s.findTodoById(id)
 	if err != nil {
 		return err
 	}
