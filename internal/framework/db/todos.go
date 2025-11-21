@@ -2,8 +2,6 @@ package db
 
 import (
 	"go-todos/internal/core/domain"
-	"go-todos/internal/utils/exceptions"
-	"go-todos/internal/utils/factories"
 
 	"github.com/mwinyimoha/commons/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,11 +18,11 @@ func (r *Repository) ListTodos() ([]*domain.Todo, error) {
 	findOptions := options.Find().SetSort(bson.M{"createdAt": -1})
 	cursor, err := r.todos.Find(ctx, bson.M{}, findOptions)
 	if err != nil {
-		return nil, exceptions.New(err.Error(), 500)
+		return nil, errors.NewErrorf(errors.Internal, "could not fetch records")
 	}
 
 	if err := cursor.All(ctx, &todos); err != nil {
-		return nil, errors.NewErrorf(errors.Internal, "could not fetch records")
+		return nil, errors.NewErrorf(errors.Internal, "could not serialize records")
 	}
 
 	return todos, nil
@@ -48,7 +46,7 @@ func (r *Repository) SaveTodo(todo *domain.Todo) error {
 }
 
 func (r *Repository) EditTodo(todo *domain.Todo) error {
-	ctx, cancel := factories.NewContext()
+	ctx, cancel := r.getContext()
 	defer cancel()
 
 	_, err := r.todos.ReplaceOne(ctx, bson.M{"id": todo.ID}, todo)
