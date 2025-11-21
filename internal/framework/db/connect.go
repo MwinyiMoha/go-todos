@@ -8,11 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-func connectDatabase(ctx context.Context, URI string) (*mongo.Client, error) {
-	/*
-		Creates a connection to the database
-		Returns a mongo client if connection is successful
-	*/
+func connect(ctx context.Context, URI string) (*mongo.Client, error) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(URI))
 	if err != nil {
 		return nil, err
