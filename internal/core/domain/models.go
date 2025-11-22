@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type TodoPayload struct {
+	Description string `json:"description" binding:"required" validate:"min=1,max=255"`
+}
+
 type Todo struct {
 	ID          string    `json:"id" bson:"id"`
 	Description string    `json:"description" bson:"description"`

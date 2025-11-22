@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"go-todos/internal/config"
 	"go-todos/internal/core/app"
 	"go-todos/internal/core/ports"
+	"go-todos/internal/framework/api"
 	"go-todos/internal/framework/db"
 	"go-todos/internal/framework/store"
 	"log"
+	"net/http"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/mwinyimoha/commons/pkg/logging"
@@ -39,5 +45,33 @@ func main() {
 		}
 	}
 
-	_ = app.NewService(repo)
+	svc := app.NewService(repo)
+	addr := fmt.Sprintf(":%d", cfg.ServerPort)
+	ch := make(chan error, 1)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
+
+	switch cfg.APIType {
+	case "rest":
+		router := api.NewRouter(svc, cfg.Debug)
+		srv := &http.Server{
+			Addr:    addr,
+			Handler: router.Engine,
+		}
+		go func() {
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Fatal("failed to start server", zap.Error(err))
+				ch <- err
+			}
+		}()
+	default:
+		logger.Fatal("unsupported api type", zap.String("api_type", cfg.APIType))
+	}
+
+	select {
+	case <-ctx.Done():
+		logger.Info("initiating graceful shutdown")
+	case err := <-ch:
+		logger.Fatal("application stopped with error", zap.Error(err))
+	}
 }

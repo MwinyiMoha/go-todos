@@ -1,26 +1,39 @@
 package api
 
-import "github.com/gin-gonic/gin"
+import (
+	"go-todos/internal/core/ports"
+
+	"github.com/gin-gonic/gin"
+)
 
 type Router struct {
-	Controller Controller
-	Engine     *gin.Engine
+	Engine  *gin.Engine
+	service ports.AppService
 }
 
-func NewRouter(controller Controller) *Router {
-	return &Router{
-		Controller: controller,
-		Engine:     gin.Default(),
+func NewRouter(svc ports.AppService, debug bool) *Router {
+	engine := gin.Default()
+	if !debug {
+		gin.SetMode(gin.ReleaseMode)
+		engine.Use(gin.Recovery())
 	}
+
+	router := Router{
+		service: svc,
+		Engine:  engine,
+	}
+
+	router.AttachRoutes()
+	return &router
 }
 
-func (r *Router) AddRoutes() {
+func (r *Router) AttachRoutes() {
 	v1 := r.Engine.Group("api/v1")
 	{
-		v1.GET("/todos", r.Controller.GetTodos)
-		v1.POST("/todos", r.Controller.CreateTodo)
-		v1.GET("/todos/:id", r.Controller.GetTodo)
-		v1.PUT("/todos/:id", r.Controller.UpdateTodo)
-		v1.DELETE("/todos/:id", r.Controller.DeleteTodo)
+		v1.GET("/todos", r.GetTodos)
+		v1.POST("/todos", r.CreateTodo)
+		v1.GET("/todos/:id", r.GetTodo)
+		v1.PUT("/todos/:id", r.UpdateTodo)
+		v1.DELETE("/todos/:id", r.DeleteTodo)
 	}
 }
