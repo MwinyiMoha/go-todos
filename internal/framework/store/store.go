@@ -16,6 +16,10 @@ func New() *Store {
 	}
 }
 
+func (s *Store) Close() error {
+	return nil
+}
+
 func (s *Store) findTodoById(id string) (*domain.Todo, int, error) {
 	for i := range s.todos {
 		if s.todos[i].ID == id {
