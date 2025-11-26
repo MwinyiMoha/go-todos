@@ -12,22 +12,24 @@ type Router struct {
 }
 
 func NewRouter(svc ports.AppService, debug bool) *Router {
-	engine := gin.Default()
 	if !debug {
 		gin.SetMode(gin.ReleaseMode)
-		engine.Use(gin.Recovery())
 	}
+
+	engine := gin.New()
+	engine.Use(gin.Logger())
+	engine.Use(gin.Recovery())
 
 	router := Router{
-		service: svc,
 		Engine:  engine,
+		service: svc,
 	}
 
-	router.AttachRoutes()
+	router.attachRoutes()
 	return &router
 }
 
-func (r *Router) AttachRoutes() {
+func (r *Router) attachRoutes() {
 	v1 := r.Engine.Group("api/v1")
 	{
 		v1.GET("/todos", r.GetTodos)
