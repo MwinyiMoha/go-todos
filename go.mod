@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/google/uuid v1.6.0
 	github.com/mwinyimoha/commons v0.1.0-bd9bed8
+	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
 	go.mongodb.org/mongo-driver v1.9.0
 	go.uber.org/zap v1.27.0
@@ -24,6 +25,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
