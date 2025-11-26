@@ -2,6 +2,7 @@ package app
 
 import (
 	"go-todos/internal/core/domain"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/mwinyimoha/commons/pkg/errors"
@@ -49,6 +50,7 @@ func (svc *Service) UpdateTodo(id string, description string) (*domain.Todo, err
 	}
 
 	todo.Description = description
+	todo.UpdatedAt = time.Now()
 	if err := svc.repository.EditTodo(todo); err != nil {
 		return nil, err
 	}
