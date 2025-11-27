@@ -21,16 +21,17 @@ type Config struct {
 func New(val *validator.Validate) (*Config, error) {
 	v := viper.New()
 	v.SetConfigType("env")
+	v.SetConfigName(".env")
 
-	v.SetDefault("APP_NAME", "")
+	v.SetDefault("APP_NAME", "Todos Service")
 	v.SetDefault("APP_VERSION", "0.1.0")
-	v.SetDefault("DEBUG", true)
+	v.SetDefault("DEBUG", false)
 	v.SetDefault("APP_TIMEOUT", 10)
 	v.SetDefault("SERVER_PORT", 8080)
 	v.SetDefault("DATABASE_URL", "")
 	v.SetDefault("DATABASE_NAME", "")
 	v.SetDefault("STORE", "inmemory")
-	v.SetDefault("INTERFACE", "cli")
+	v.SetDefault("INTERFACE", "http")
 
 	v.AutomaticEnv()
 
