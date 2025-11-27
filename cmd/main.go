@@ -1,82 +1,110 @@
 package main
 
 import (
-	"go-todos/internal/core/services"
+	"context"
+	"fmt"
+	"go-todos/internal/config"
+	"go-todos/internal/core/app"
+	"go-todos/internal/core/ports"
+	"go-todos/internal/framework/api"
+	"go-todos/internal/framework/cli"
 	"go-todos/internal/framework/db"
-	"go-todos/internal/framework/rpcserver"
-	pb "go-todos/internal/framework/rpcserver/proto"
-	"go-todos/internal/utils/config"
-	"go-todos/internal/utils/factories"
+	"go-todos/internal/framework/store"
 	"log"
-	"net"
-	"os"
+	"net/http"
 	"os/signal"
 	"syscall"
-	"time"
 
-	_ "github.com/joho/godotenv/autoload"
-	"google.golang.org/grpc"
+	"github.com/go-playground/validator/v10"
+	"github.com/mwinyimoha/commons/pkg/logging"
+	"go.uber.org/zap"
 )
+
+var storeFactories = map[string]func(cfg *config.Config) (ports.AppRepository, error){
+	"inmemory": func(_ *config.Config) (ports.AppRepository, error) {
+		return store.New(), nil
+	},
+	"database": func(cfg *config.Config) (ports.AppRepository, error) {
+		return db.NewRepository(cfg)
+	},
+}
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	conf := config.New()
-
-	repository, err := db.NewRepository(conf)
+	logger, err := logging.NewLoggerConfig().BuildLogger()
 	if err != nil {
-		log.Fatalf("DB_CONN_ERROR -- %v", err)
+		log.Fatal("failed to initialize logger", err)
 	}
 
-	service := services.NewTodoService(repository)
-	srv := rpcserver.NewRPCServer(service)
+	defer func() { _ = logger.Sync() }()
 
-	lis, err := net.Listen("tcp", ":"+conf.Port)
+	val := validator.New()
+	cfg, err := config.New(val)
 	if err != nil {
-		log.Fatalf("NET_ERROR -- %v", err)
+		logger.Fatal("failed to load app config", zap.Error(err))
 	}
 
-	s := grpc.NewServer()
-	pb.RegisterTodoRPCServiceServer(s, srv)
+	factory, ok := storeFactories[cfg.Store]
+	if !ok {
+		logger.Fatal("unsupported store type", zap.String("store_type", cfg.Store))
+	}
 
-	go func() {
-		log.Printf("Starting RPC server on port: %v\n", conf.Port)
+	repo, err := factory(cfg)
+	if err != nil {
+		logger.Fatal("failed to initialize repository", zap.Error(err))
+	}
 
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("SERVE_ERRROR -- %v", err)
+	svc := app.NewService(repo)
+
+	switch cfg.Interface {
+	case "http":
+		router := api.NewRouter(svc, logger, cfg.Debug)
+		srv := &http.Server{
+			Addr:    fmt.Sprintf(":%d", cfg.ServerPort),
+			Handler: router.Engine,
 		}
-	}()
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
-	received := <-c
+		ch := make(chan error, 1)
+		ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+		defer stop()
 
-	func() {
-		log.Printf("Handling (%v): Initiating graceful server shutdown!!", received)
+		go func() {
+			logger.Info(
+				"starting server",
+				zap.String("app_name", cfg.AppName),
+				zap.String("app_version", cfg.AppVersion),
+				zap.Int("port", cfg.ServerPort),
+			)
 
-		done := make(chan int)
-		go func(c chan int) {
-			s.GracefulStop()
-			c <- 1
-		}(done)
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Error("failed to start server", zap.Error(err))
+				ch <- err
+			}
+		}()
 
-		countdown := time.NewTimer(time.Duration(conf.AppTimeout))
 		select {
-		case <-done:
-			break
-		case <-countdown.C:
-			s.Stop()
+		case <-ctx.Done():
+			logger.Info("initiating graceful shutdown")
+
+			if err := srv.Shutdown(context.Background()); err != nil {
+				logger.Error("failed graceful shutdown", zap.Error(err))
+			}
+
+			if err := repo.Close(); err != nil {
+				logger.Error("failed to close repository", zap.Error(err))
+			}
+
+			logger.Info("application stopped")
+		case err := <-ch:
+			logger.Fatal("application stopped with error", zap.Error(err))
 		}
-	}()
-
-	func() {
-		log.Println("Closing client connections!!")
-
-		ctx, cancel := factories.NewContext()
-		defer cancel()
-
-		if err := repository.Client.Disconnect(ctx); err != nil {
-			log.Fatalf("DB_DISCONNECT_ERROR -- %v", err)
+	case "cli":
+		cmd := cli.NewCMD(cfg, svc)
+		if err := cmd.Execute(); err != nil {
+			logger.Fatal("execution failed", zap.Error(err))
 		}
-	}()
+	default:
+		logger.Fatal("unsupported interface type", zap.String("api_type", cfg.Interface))
+	}
 }

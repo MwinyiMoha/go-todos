@@ -15,7 +15,11 @@
 # vendor/
 
 # Config vars
-.env
+*.env
 
 # Docker compose dirs
 apps/
+
+# Build & temp dirs
+tmp/
+build/
