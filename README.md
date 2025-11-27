@@ -28,7 +28,7 @@ This project implements hexagonal architecture to achieve a clean separation of 
         ┌────────────▼────────────┐
         │   Repository Interface  │
         │        (Port)           │
-        └──────────┬──────────────┘
+        └────────────┬────────────┘
                      │
      ┌───────────────┴──────────────┐
      │                              │
@@ -42,6 +42,7 @@ This project implements hexagonal architecture to achieve a clean separation of 
 ### Key Components
 
 - **Driving Adapters (Primary)**: REST API and CLI interfaces that drive the application
+- **Service Port**: Interface defining available business logic. Driving adapters call functions on this interface to interact with the service layer
 - **Application Core**: Business logic isolated from external concerns
 - **Repository Port**: Interface defining storage operations
 - **Driven Adapters (Secondary)**: MongoDB and in-memory implementations of the repository
@@ -70,13 +71,6 @@ This project implements hexagonal architecture to achieve a clean separation of 
 ```bash
 git clone https://github.com/mwinyimoha/go-todos.git
 cd go-todos
-```
-
-### Install dependencies
-
-```bash
-go mod download
-go mod vendor
 ```
 
 ### Build the application
@@ -129,7 +123,7 @@ STORE="inmemory"
 DEBUG="false"
 ```
 
-**For CLI with In-Memory Storage:**
+**For CLI with MongoDB Storage:**
 
 ```env
 # .env
@@ -196,35 +190,35 @@ export DATABASE_NAME="todos"
 
 ```
 .
-├── cmd
-│   └── main.go                             
+├── cmd                                # Application entrypoint  
+│   └── main.go                                  
 ├── Dockerfile
 ├── go.mod
 ├── go.sum
 ├── internal
-│   ├── config
-│   │   └── config.go
+│   ├── config                         # Configuration management
+│   │   └── config.go                  
 │   ├── core
-│   │   ├── app
+│   │   ├── app                        # Business logic
 │   │   │   ├── service.go
 │   │   │   └── todos.go
-│   │   ├── domain
+│   │   ├── domain                     # Entities
 │   │   │   └── models.go
-│   │   └── ports
+│   │   └── ports                      # Rules of engagement
 │   │       ├── app_repository.go
 │   │       └── app_service.go
 │   └── framework
-│       ├── api
+│       ├── api                        # HTTP/REST adapter
 │       │   ├── handlers.go
 │       │   └── router.go
-│       ├── cli
+│       ├── cli                        # CLI adapter
 │       │   ├── cmd.go
 │       │   └── commands.go
-│       ├── db
+│       ├── db                         # MongoDB adapter
 │       │   ├── connect.go
 │       │   ├── db.go
 │       │   └── todos.go
-│       └── store
+│       └── store                      # In-Memory store adapter
 │           └── store.go
 ├── LICENSE
 ├── Makefile
@@ -273,7 +267,7 @@ go test ./internal/core/app/...
 ### Hexagonal Architecture Benefits
 
 1. **Independence**: Business logic is independent of frameworks, UI, and databases
-2. **Testability**: Core logic can be tested without external dependencies
+2. **Testability**: Core logic can be tested without external dependencies by using mock interfaces
 3. **Flexibility**: Easy to swap implementations (e.g., MongoDB → PostgreSQL)
 4. **Maintainability**: Clear boundaries between layers reduce coupling
 
@@ -308,6 +302,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contact
 
-Mohammed Mwijaa - [@__mmwijaa__](https://twitter.com/__mmwijaa__)
+Mohammed Mwijaa - [@\_\_mmwijaa\_\_](https://twitter.com/__mmwijaa__)
 
 Project Link - [https://github.com/mwinyimoha/go-todos](https://github.com/mwinyimoha/go-todos)
