@@ -22,3 +22,4 @@ apps/
 
 # Build & temp dirs
 tmp/
+build/

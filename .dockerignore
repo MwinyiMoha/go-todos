@@ -1,3 +1,41 @@
-.env
-env.sample
-apps/
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, build output
+*.test
+*.out
+
+# Output of the go coverage tool
+*.cover
+
+# Dependency directories
+# vendor/
+
+# Go build artifacts
+bin/
+build/
+
+# Logs
+*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker-related files
+Dockerfile
+docker-compose.yml
+
+# Git-related files
+.git/
+.gitignore
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
