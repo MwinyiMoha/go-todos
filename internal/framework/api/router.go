@@ -2,8 +2,11 @@ package api
 
 import (
 	"go-todos/internal/core/ports"
+	"time"
 
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 type Router struct {
@@ -11,14 +14,14 @@ type Router struct {
 	service ports.AppService
 }
 
-func NewRouter(svc ports.AppService, debug bool) *Router {
+func NewRouter(svc ports.AppService, logger *zap.Logger, debug bool) *Router {
 	if !debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
 	engine := gin.New()
-	engine.Use(gin.Logger())
-	engine.Use(gin.Recovery())
+	engine.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	engine.Use(ginzap.RecoveryWithZap(logger, true))
 
 	router := Router{
 		Engine:  engine,

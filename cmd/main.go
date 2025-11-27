@@ -59,7 +59,7 @@ func main() {
 
 	switch cfg.Interface {
 	case "http":
-		router := api.NewRouter(svc, cfg.Debug)
+		router := api.NewRouter(svc, logger, cfg.Debug)
 		srv := &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.ServerPort),
 			Handler: router.Engine,
